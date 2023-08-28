@@ -1,1 +1,50 @@
+library(switchBox)
+library(vcdExtra)
+library(caret)
+library(forestplot)
+library(pROC)
+library(survcomp)
+library(survival)
+library(data.table)
+library(reportROC)
+library(verification)
+
+setwd("/home/shpc_06/ODFSP")
+
+source("/home/shpc_06/ODFSP/ODFSP_score_estimation.R")
+
+ICGC_list <- odfsp_prob(ICGC, selected_model)
+TCGA_list <- odfsp_prob(TCGA, selected_model)
+GSE14_list <- odfsp_prob(GSE140082, selected_model)
+GSE32_list <- odfsp_prob(GSE32062, selected_model)
+GSE10_list <- odfsp_prob(GSE102094, selected_model)
+GSE49_list <- odfsp_prob(GSE49997, selected_model)
+
+dindex_TCGA <- D.index(x = TCGA_list[[1]], surv.time = as.numeric(as.character(TCGA.grp$PFS)),
+                       surv.event = as.numeric(as.character(TCGA.grp$pfsstatus)), na.rm = TRUE, alpha = 0.05, method.test = "logrank")
+dindex_GSE14 <- D.index(x = GSE14_list[[1]], surv.time = as.numeric(as.character(GSE14.grp$PFS)),
+                        surv.event = as.numeric(as.character(GSE14.grp$pfsstatus)), na.rm = TRUE, alpha = 0.05, method.test = "logrank")
+dindex_GSE32 <- D.index(x = GSE32_list[[1]], surv.time = as.numeric(as.character(GSE32.grp$PFS)),
+                        surv.event = as.numeric(as.character(GSE32.grp$pfsstatus)), na.rm = TRUE, alpha = 0.05, method.test = "logrank")
+dindex_GSE10 <- D.index(x = GSE10_list[[1]], surv.time = as.numeric(as.character(GSE10.grp$PFS)),
+                        surv.event = as.numeric(as.character(GSE10.grp$pfsstatus)), na.rm = TRUE, alpha = 0.05, method.test = "logrank")
+dindex_GSE49 <- D.index(x = GSE49_list[[1]], surv.time = as.numeric(as.character(GSE49.grp$PFS)),
+                        surv.event = as.numeric(as.character(GSE49.grp$pfsstatus)), na.rm = TRUE, alpha = 0.05, method.test = "logrank")
+
+dindex_meta <- combine.est(c(dindex_TCGA$d.index, dindex_GSE14$d.index, dindex_GSE32$d.index,
+                             dindex_GSE10$d.index, dindex_GSE49$d.index),
+                           c(dindex_TCGA$se, dindex_GSE14$se, dindex_GSE32$se, dindex_GSE10$se, dindex_GSE49$se), na.rm = TRUE, hetero = TRUE)
+
+dindex_meta_pval = 2 * pnorm(-abs(log(dindex_meta$estimate) / dindex_meta$se))
+
+# Similar simplifications for other calculations and plots
+
+pdf("/home/shpc_06/ODFSP/ODFSP_dindex.pdf")
+# ... code for plotting forestplot of D-Index ...
+dev.off()
+
+# Similar simplifications for ROC analysis
+pdf("/home/shpc_06/ODFSP/ODFSP_AUC.pdf")
+# ... code for plotting ROC curves ...
+dev.off()
 
